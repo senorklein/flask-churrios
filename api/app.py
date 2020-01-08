@@ -1,25 +1,16 @@
 from flask import Flask, json
-from flask_sqlalchemy import SQLAlchemy
-from api.dblogic import dbluser
-from api.containers.cuser import CUser
+from flask_mysqldb import MySQL
+
 import yaml
+
+from containers.user import User
+from lib import userlib
 
 app = Flask(__name__)
 conf = yaml.load(open('api/db.yaml'))
 
-mysql_uri = ''.join(['mysql://',
-             conf['mysql_user'],
-             ':',
-             conf['mysql_password'],
-             '@',
-             conf['mysql_host'],
-             '/',
-             conf['mysql_db']])
+mysql = MySQL(app)
 
-print (mysql_uri)
-app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
-
-db = SQLAlchemy(app)
 
 @app.route('/')
 def index():
@@ -29,7 +20,19 @@ def index():
 
 @app.route('/user/<uuid>', methods=['GET'])
 def user_get(uuid):
-    user = dbluser.get_user_uuid(uuid)
+    # test data
+    test = {"uuid" : uuid,
+           "name" : "test",
+           "email" : "test@test.com"}
+
+    cur = mysql.connection.cursor()
+
+    userlib.get_user_by_uuid(cur, uuid)
+
+    user = User(test, test.keys())
+    if user['name'] == 'test':
+        print("This is a test user: " + user['name'])
+
     return json.dumps(user)
 
 
